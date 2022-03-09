@@ -6,7 +6,7 @@
 
 
 
-This repository contains the scripts to perform **N**ucleo**t**ide **A**ugmentation (**NTA**) on a labeled data set of amino acid sequences as well as to recreate the analysis described in Minot & Reddy 2022 [[1](https://www.biorxiv.org/content/10.1101/2022.03.08.483422v1)]].
+This repository contains the scripts to perform **N**ucleo**t**ide **A**ugmentation (**NTA**) on a labeled data set of amino acid sequences as well as to recreate the analysis described in Minot & Reddy 2022 [[1](https://www.biorxiv.org/content/10.1101/2022.03.08.483422v1)].
 
 
 ## Table of contents
