@@ -6,7 +6,7 @@
 
 
 
-This repository contains the scripts to perform **N**ucleo**t**ide **A**ugmentation (**NTA**) on a labeled data set of amino acid sequences as well as to recreate the analysis described in Minot & Reddy 2022 [[1](https://www.biorxiv.org/)].
+This repository contains the scripts to perform **N**ucleo**t**ide **A**ugmentation (**NTA**) on a labeled data set of amino acid sequences as well as to recreate the analysis described in Minot & Reddy 2022 [[1](https://www.biorxiv.org/content/10.1101/2022.03.08.483422v1)]].
 
 
 ## Table of contents
@@ -113,3 +113,14 @@ python plot_trastuzumab.py
 ## Citation
 
 If you use the the code in this repository for your research, please cite our paper.
+
+```
+@article {Minot2022.03.08.483422,
+	author = {Minot, Mason and Reddy, Sai T.},
+	title = {Nucleotide augmentation for machine learning-guided protein engineering},
+	year = {2022},
+	doi = {10.1101/2022.03.08.483422},
+	URL = {https://www.biorxiv.org/content/early/2022/03/09/2022.03.08.483422},
+	journal = {bioRxiv}
+}
+```
