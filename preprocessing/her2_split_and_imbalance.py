@@ -147,9 +147,7 @@ def drop_test_seqs(train_df, test_df, seq_name):
     out_df = concat_df[concat_df['df'] == 'train']
     return out_df
 
-
 train_df = drop_test_seqs(train_df, test_df_initial, 'AASeq')
-
 
 def drop_and_rename_columns(df):
     df = df.copy()
@@ -157,7 +155,6 @@ def drop_and_rename_columns(df):
     df = df.drop(columns = ['Unnamed: 0', 'Fraction', 'NucSeq', 'Count', 'df'])
     return df
     
-
 #Balance test set & save to csv 
 test_df = test_df_initial.copy()
 test_df['df'] = 'test' #add to df to facilitate using the function below
@@ -199,8 +196,6 @@ for imbal_qty in class_imbalance_qty_list:
     train_positives = train_df_master_copy[train_df_master_copy['target'] == 1]
     train_negs = train_df_master_copy[train_df_master_copy['target'] == 0]
     
-    #old downsampling method
-    #train_positives = train_positives.sample(n = int(imbal_qty * len(train_positives)), random_state = 1)
     #new downsampling method using sklearn & edit distance
     if imbal_qty != 1.0:
         train_positives, x_discard, y_train, y_discard = train_test_split(train_positives, train_positives['target'], test_size = 1 - imbal_qty,
@@ -208,8 +203,6 @@ for imbal_qty in class_imbalance_qty_list:
     elif imbal_qty == 1.0:
         train_truncated = train_positives    
     
-    
-    #method 26.01.22
     #split val set from training & maintain LD distribution per class
     train_positives, val_positives, y_train, y_val = train_test_split(train_positives, train_positives['target'], test_size = 1 - 0.8,
                                                               random_state = 1, shuffle = True, stratify = train_positives['LD'])
@@ -219,15 +212,7 @@ for imbal_qty in class_imbalance_qty_list:
 
     train_df = train_positives.append(train_negs,ignore_index = True)
     train_df = train_df.reindex(np.random.permutation(train_df.index))
-    
-    '''
-    #downsample negatives in validation set to 3 * the number of positives for imbalance fractions < 0.4
-    if imbal_qty < 0.4:
-        len_val_pos = len(val_positives)
-        truncate_fraction = 3*len_val_pos / len(val_negs)
-        val_negs, val_negs_discard, y_val, y_val2 = train_test_split(val_negs, val_negs['target'], test_size = 1 - truncate_fraction,
-                                                              random_state = 1, shuffle = True, stratify = val_negs['LD'])
-    '''
+
     val_df = val_positives.append(val_negs,ignore_index = True)
     val_df = val_df.reindex(np.random.permutation(val_df.index))
     
@@ -237,8 +222,6 @@ for imbal_qty in class_imbalance_qty_list:
     train_df = train_df.drop(columns = ['LD'])
     val_df = val_df.drop(columns = ['LD'])
     
-
-
     out_str_train = out_path + 'her2_train_imbal_' +  str(imbal_qty) + '.csv'
     out_str_val = out_path + 'her2_val_imbal_' +  str(imbal_qty) + '.csv'
     train_df.to_csv(out_str_train, index=False)
