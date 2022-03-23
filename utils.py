@@ -100,7 +100,7 @@ def encode_ngrams(x_train, x_val, x_test, args, seq_len = 30):
     x_val_idx = seq_to_cat(x_val, word_to_ix)
     x_test_idx = seq_to_cat(x_test, word_to_ix)
     
-    return x_train_idx, x_val_idx, x_test_idx, vocabulary
+    return x_train_idx, x_val_idx, x_test_idx
 
 
 
@@ -163,10 +163,10 @@ class Collater(object):
     """    
     #Adapated from:
     #Source: https://github.com/J-SNACKKB/FLIP/blob/d5c35cc716ca93c3c74a0b43eef5b60cbf88521f/baselines/cnn.py
-    def __init__(self, alphabet: str, 
+    def __init__(self, vocab_length: int, 
                 pad_tok=0.,
                 args = None):        
-        self.alphabet = alphabet
+        self.vocab_length = vocab_length
         self.pad_tok = pad_tok
         self.args = args
     def __call__(self, batch):
@@ -194,7 +194,7 @@ class Collater(object):
         elif self.args.base_model == 'cnn':
             ohe = []
             for i in padded:
-                i_onehot = torch.FloatTensor(maxlen, len(self.alphabet))
+                i_onehot = torch.FloatTensor(maxlen, self.vocab_length)
                 i_onehot.zero_()
                 i_onehot.scatter_(1, i, 1)
                 ohe.append(i_onehot)
@@ -204,63 +204,9 @@ class Collater(object):
         return padded, y, mask
 
 
+#
 #===========================   Convert Data to torch.DataLoader        ======================
-def data_to_loader(x_train,x_val, x_test, y_train,y_val, y_test, batch_size, args, alphabet):
-    """
-    Function for converting categorically encoding sequences + their labels to a torch Dataset and DataLoader
-    
-    Parameters
-    ----------
-    x_train, x_val, x_test: list
-        categorically encoded protein or nucleotide training, validation, and testing sequences
-    y_train, y_val, y_test: pandas.core.series.Series
-        class labels or regression fitness values corresponding to training, validation, & testing sequences
-    batch_size: int
-        batch size to be used for dataloader
-    args: argparse.ArgumentParser
-        arguments specified by user. used for this program to determine correct vocabulary size, output 
-        shape, and if a mask should be returned
-    alphabet: list of strings
-        vocabulary (i.e. amino acids, nucleotide ngrams). passed to collate_fn and used for one-hot 
-        encoding dimension calculation
-    Returns
-    -------
-    torch DataLoader objects for training, validation, and testing sets
-    """    
-
-    y_train = y_train.to_list()
-    y_val = y_val.to_list()
-    y_test = y_test.to_list()
-    
-    train_data = CustomTorchDataset(x_train, y_train)
-    val_data = CustomTorchDataset(x_val, y_val)
-    test_data = CustomTorchDataset(x_test, y_test)  
-    
-    if len(y_val) < batch_size : drop_last_val_bool = False
-    else: drop_last_val_bool = True
-    
-    if len(y_train) < batch_size : drop_last_train_bool = False
-    else: drop_last_train_bool = True
-    
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True, 
-                                               collate_fn=Collater(alphabet = alphabet, pad_tok=0., args=args), drop_last=drop_last_train_bool)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=False,
-                                              collate_fn=Collater(alphabet = alphabet, pad_tok=0., args=args), drop_last=drop_last_val_bool)
-    test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle=False,
-                                               collate_fn=Collater(alphabet = alphabet, pad_tok=0., args=args), drop_last=True)
-
-    return train_loader, val_loader, test_loader
-
-
-
-
-
-
-
-
-#===========================   Convert Data to torch.DataLoader        ======================
-def data_to_loader_online_nta(x_train,x_val, x_test, y_train,y_val, y_test, batch_size, args, 
-                              alphabet, word_to_idx_conversion, sampler_weights = None):
+def data_to_loader(x_train,x_val, x_test, y_train,y_val, y_test, batch_size, args, sampler_weights = None):
     """
     Function for converting categorically encoding sequences + their labels to a torch Dataset and DataLoader
     
@@ -300,28 +246,32 @@ def data_to_loader_online_nta(x_train,x_val, x_test, y_train,y_val, y_test, batc
     if len(y_train) < batch_size : drop_last_train_bool = False
     else: drop_last_train_bool = True
     
+    if args.ngram == 'trigram_only' and args.seq_type =='dna' : vocab_length = 64
+    elif args.ngram == 'tri_unigram' and args.seq_type =='dna' : vocab_length = 68
+    elif args.ngram == 'unigram' and args.seq_type =='dna' : vocab_length = 4
+    elif args.seq_type =='aa' : vocab_length = 20
     
     if sampler_weights != None:
         sampler = WeightedRandomSampler(sampler_weights, len(sampler_weights), replacement = False)
         
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, 
-                                                   collate_fn=Collater(alphabet = alphabet, pad_tok=0., args=args), 
+                                                   collate_fn=Collater(vocab_length = vocab_length, pad_tok=0., args=args), 
                                                    drop_last=drop_last_train_bool, sampler=sampler)
         
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=False,
-                                                  collate_fn=Collater(alphabet = alphabet, pad_tok=0., args=args), 
+                                                  collate_fn=Collater(vocab_length = vocab_length, pad_tok=0., args=args), 
                                                   drop_last=drop_last_val_bool)
         
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle=False,
-                                                   collate_fn=Collater(alphabet = alphabet, pad_tok=0., args=args), 
+                                                   collate_fn=Collater(vocab_length = vocab_length, pad_tok=0., args=args), 
                                                    drop_last=True)   
         
     else:
         train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True, 
-                                                   collate_fn=Collater(alphabet = alphabet, pad_tok=0., args=args), drop_last=drop_last_train_bool)
+                                                   collate_fn=Collater(vocab_length = vocab_length, pad_tok=0., args=args), drop_last=drop_last_train_bool)
         val_loader = torch.utils.data.DataLoader(val_data, batch_size=batch_size, shuffle=False,
-                                                  collate_fn=Collater(alphabet = alphabet, pad_tok=0., args=args), drop_last=drop_last_val_bool)
+                                                  collate_fn=Collater(vocab_length = vocab_length, pad_tok=0., args=args), drop_last=drop_last_val_bool)
         test_loader = torch.utils.data.DataLoader(test_data, batch_size=batch_size, shuffle=False,
-                                                   collate_fn=Collater(alphabet = alphabet, pad_tok=0., args=args), drop_last=True)
+                                                   collate_fn=Collater(vocab_length = vocab_length, pad_tok=0., args=args), drop_last=True)
 
     return train_loader, val_loader, test_loader

@@ -112,7 +112,7 @@ python plot_trastuzumab.py
 
 ## Citation
 
-If you use the the code in this repository for your research, please cite our paper.
+If you use the code in this repository for your research, please cite our paper.
 
 ```
 @article {Minot2022.03.08.483422,

@@ -70,26 +70,6 @@ def main(args):
     else:
         use_cuda = False
     device = torch.device("cuda" if use_cuda else "cpu")
-    
-    
-    #=============== Preset Experimental Parameters ========== =============================    
-    #args.data_type = 'aav'
-    #args.learn_rate = 5e-6
-    #args.lr_scheduler = False
-    #args.opt_id = 'adam'
-    #args.big_data = 'True'
-    #args.aug_factor = 'neg_ds_explicit'
-    #args.aug_factor = 2
-    #args.aug_factor = 'none'
-    #args.seq_file_type = 'dna'
-    #args.seq_type = 'dna'
-    #args.trunc= 0.5
-    #args.full_dataset = 'True'
-    #args.base_model = 'transformer'
-    #args.ngram = 'trigram_only'
-    #args.ngram = 'tri_unigram'
-    #args.dropout = 0.3
-    
         
     if args.base_model == 'transformer': args.batch_size = 32
     elif args.base_model == 'cnn': args.batch_size = 256
@@ -238,25 +218,11 @@ def main(args):
                 elif args.data_type == 'aav' and  args.seq_type  == 'dna': seq_len = 126
                 elif args.data_type == 'her2' and  args.seq_type  == 'dna': seq_len = 30
                 else: seq_len = None
-               
-                
     
                 model_list = [model_dict['basic']]
-                
-            
-                if args.seq_type == 'aa' and args.ngram == 'unigram' and args.data_type != 'thermo':
-                    vocabulary = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L','M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
-                elif args.seq_type == 'dna' and args.ngram == 'unigram':
-                    vocabulary = ['A', 'C', 'G', 'T']
-                elif args.seq_type == 'dna' and args.ngram == 'tri_unigram':
-                    vocabulary = pd.read_csv('data/ngram_vocabularies/nt_vocabulary.csv')['gram']        
-                elif args.seq_type == 'dna' and args.ngram == 'trigram_only':
-                    vocabulary = pd.read_csv('data/ngram_vocabularies/nt_trigram_vocabulary.csv')['gram']
-                
-                word_to_ix = {word: i for i, word in enumerate(vocabulary)}
-                
-                x_train, x_val, x_test,vocabulary = encode_ngrams(x_train, x_val, x_test, args, seq_len)
-                if args.data_type == 'her2':# and args.aug_factor != 'none':
+
+                x_train, x_val, x_test = encode_ngrams(x_train, x_val, x_test, args, seq_len)
+                if args.data_type == 'her2':
                     class_sample_count = np.array( [len(np.where(y_train == t)[0]) for t in np.unique(y_train)])
                     weight = 1. / class_sample_count
                     weights_for_sampler = np.array([weight[t] for t in y_train])
@@ -266,8 +232,8 @@ def main(args):
                 else: weights_for_sampler = None
                 
                 
-                train_loader, val_loader, test_loader = data_to_loader_online_nta(x_train, x_val, x_test, y_train, y_val, y_test, batch_size = args.batch_size, 
-                                                                            args = args, alphabet = vocabulary, word_to_idx_conversion = word_to_ix, sampler_weights = weights_for_sampler)
+                train_loader, val_loader, test_loader = data_to_loader(x_train, x_val, x_test, y_train, y_val, y_test, batch_size = args.batch_size, 
+                                                                            args = args, sampler_weights = weights_for_sampler)
             
                 train_length = len(y_train)
                 
