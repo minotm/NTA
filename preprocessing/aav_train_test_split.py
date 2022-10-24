@@ -8,7 +8,7 @@ Created 2022
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import re
-from nt_augment import *
+
 
 print('Now Executing AAV Train/Val/Test Splitting...')
 aav_path = '../data/aav/'

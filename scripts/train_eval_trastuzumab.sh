@@ -6,14 +6,17 @@ do
     python main.py --base_model=$m --data_type=her2 --seq_type=aa
 done
 
-#run train/eval on DNA
+#run train/eval on offline NTA with DNA
 for m in transformer cnn
 do
-    for a in none 2 5 10
+    for t in iterative random codon_balance codon_shuffle
     do
-        for n in tri_unigram trigram_only unigram
+        for a in none 2 5 10
         do
-            python main.py --base_model=$m --data_type=her2 --seq_type=dna --aug_factor=$a  --ngram=$n --seq_file_type=dna
+            for n in tri_unigram trigram_only unigram
+            do
+                python main.py --base_model=$m --data_type=her2 --seq_type=dna --aug_factor=$a  --ngram=$n --seq_file_type=dna --aug_type=$t
+            done
         done
     done
 done

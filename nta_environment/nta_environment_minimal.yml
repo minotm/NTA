@@ -1,8 +1,0 @@
-name: nta_env_minimal
-channels:
-  - defaults
-dependencies:
-  - python==3.8.5
-  - pip==20.1.1
-  - pip:
-    - -r file:requirements_minimal.txt

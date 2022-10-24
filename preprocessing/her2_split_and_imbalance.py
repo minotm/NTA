@@ -165,7 +165,7 @@ test_df = test_positives.append(test_negs,ignore_index = True)
 test_df = test_df.reindex(np.random.permutation(test_df.index))
 
 out_path = '../data/her2/'
-test_df.to_csv(out_path + 'her2_test.csv', index=False)
+test_df.to_csv(out_path + 'her2_seven_vs_rest_test.csv', index=False)
 
 
 train_df = drop_and_rename_columns(train_df)
@@ -222,7 +222,7 @@ for imbal_qty in class_imbalance_qty_list:
     train_df = train_df.drop(columns = ['LD'])
     val_df = val_df.drop(columns = ['LD'])
     
-    out_str_train = out_path + 'her2_train_imbal_' +  str(imbal_qty) + '.csv'
-    out_str_val = out_path + 'her2_val_imbal_' +  str(imbal_qty) + '.csv'
+    out_str_train = out_path + 'her2_seven_vs_rest_train_imbal_' +  str(imbal_qty) + '.csv'
+    out_str_val = out_path + 'her2_seven_vs_rest_val_imbal_' +  str(imbal_qty) + '.csv'
     train_df.to_csv(out_str_train, index=False)
     val_df.to_csv(out_str_val, index=False)

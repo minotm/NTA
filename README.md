@@ -18,58 +18,29 @@ This repository contains the scripts to perform **N**ucleo**t**ide **A**ugmentat
 
 ## Prepare Working Environment
 
-2 environments are provided. The first is the full environment from the paper. The other is a minimal version which has not been extensively tested.
-Certain packages in the full environment, such as apex [[3](https://nvidia.github.io/apex/)], may require manual installation per instructions provided by the authors.
-
-Note: For the following environment activation instructions, `minimal` is used. To enable the environment used for the paper, simply replace `minimal` with `full`.
-
 #### Setup with Conda
-Before running any of the scripts, the necessary packages can be installed via Conda, the open source package management system [[2](https://docs.conda.io/)], and one of the two provided environment files `nta_environment_minimal.yml` or `nta_environment_full.yml`, using following commands:
+Before running any of the scripts, the necessary packages can be installed via Conda, the open source package management system [[2](https://docs.conda.io/)], and one of the two provided environment files `nta_environment.yml` using following commands:
 
 ```console
 cd nta_environment
-conda env create -f nta_environment_minimal.yml
-conda activate nta_env_minimal
+conda env create -f nta_environment.yml
+conda activate nta_env
 ```
 #### Setup with venv
-If virtualenv is preferred the environment can be setup from `nta_environment/` from either `requirements_minimal.txt` or `requirements_full.txt`, via The following 3 commands using python 3.8.5 and pip 20.1.1:
-1. `python -m venv nta_env_minimal`
+If virtualenv is preferred the environment can be setup from `nta_environment/` from `requirements.txt`, via The following 3 commands using python 3.8.5 and pip 20.1.1:
+1. `python -m venv nta_env`
 2. Next, on Windows, run:
-`nta_env_minimal\Scripts\activate.bat`
+`nta_env\Scripts\activate.bat`
 Or, on Unix / MacOS, run:
-`source nta_env_minimal/bin/activate`
-3. Then pip install the requirements via: `pip install -r requirements_minimaltxt`
+`source nta_env/bin/activate`
+3. Then pip install the requirements via: `pip install -r requirements.txt`
 
 
 ## Apply NTA to Your Data Set
 
-The script `run_nta.py` can be used to apply NTA to your own data. See the following tables for a description of arguments & example format of input file.
+The folder `run_nta` contains instructions and code to apply NTA to your own data. 
 
-The output file (augmented or reverse translated) will change the column header `aaseq` to `dnaseq` while maintaining the rest of the data.  
 
-#### run_nta.py arguments
-| Argument | Type | Description |
-|:---------|---------------|-------------|
-|input_file| str/bool | name of or path to input data file,  including .csv, i.e. `data.csv`|
-|outfile_prefix| str | pefix of output NTA data file, omitting .csv, i.e. `data_nta`. If file is only reverse translated, `_reverse_translated` will be added to prefix. `nta` will be added to prefix if file is augmented|
-|aug_size | int | desired length of final augmented data set (number of nucleotide sequences)|
-|rev_translate_only| str/bool | if `True`, sequences will only be reverse translated, without augmentation (i.e. for test/val sets). `False` if augmentation desired|
-
-#### Example input file
-Ensure that columns named `aaseq` and `target` are present, containing the amino acid sequences (str) and their respective labels (int or float).
-
-| aaseq | target | additional data |
-|:---------|---------------|-------------|
-|VDVG|1| ...|
-|IDGV|	1.4459 | ... |
-|LDGV|	1.6901 | ... |
-|... | ... | ...|
-
-Example execution using the provided file `Example_NTA_Input_GB1.csv`. Ensure `data/` is unzipped, then run:
-```console
-python run_nta.py --input_file=data/Example_NTA_Input_GB1.csv --rev_translate_only=False --aug_size=30000 --outfile_prefix=data/gb1_nta
-
-```
 
 ## Reproducing Study Results
 

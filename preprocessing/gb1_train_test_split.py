@@ -7,7 +7,6 @@ Created 2022
 """
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from nt_augment import *
 
 print('Now Executing GB1 Train/Val/Test Splitting...')
 gb1_path = '../data/gb1/'
@@ -106,11 +105,6 @@ for truncate_factor in truncate_factor_list:
     val = bin_targets_to_classes_gb1(val)
     test = bin_targets_to_classes_gb1(test)
     
-    #train = bin_targets_to_classes_aav(train)
-    #val = bin_targets_to_classes_aav(val)
-    #test = bin_targets_to_classes_aav(test)
-    
-    
     if truncate_factor != 1.0 and truncate_factor != 0.01:
         train_truncated, x_discard, y_train, y_discard = train_test_split(train, train['target'], test_size = 1 - truncate_factor,
                                                                   random_state = 1, shuffle = True, stratify = train['class'])            
@@ -141,3 +135,6 @@ for truncate_factor in truncate_factor_list:
     
     out_str = out_path + 'gb1_' + data_str + '_val_' + 'truncated_' + str(truncate_factor) + '.csv'
     val_truncated.to_csv(out_str, index=False)
+
+    out_str = out_path + 'gb1_' + data_str + '_test.csv'
+    test.to_csv(out_str, index=False)

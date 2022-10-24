@@ -1,202 +1,149 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3 
 # -*- coding: utf-8 -*-
 """
 Created 2022
 
-@author: Mason Minot
+@author: mminot
 """
-
-
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
-import re
-import pickle
-from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
 
-def add_rho_to_df(df, is_float):
+def add_metric_to_df(df, is_float, metric_str):
     data = df.copy()
-    modified_rho = []
+    out_list = []
+    for entry in data['output/final_test_' + metric_str]:
+        out_list.append(float(entry))
+    data['best_' + metric_str] = out_list
     
-    if not is_float:
-        for entry in data['output/final_test_spearman']:
-            m = re.search(r'^[\-]*0\.[0-9]{4}',entry)
-            try:
-                modified_rho.append(float(m.group(0)))
-            except:
-                if entry.startswith('nan'):
-                    modified_rho.append(np.nan)
-                else:
-                    modified_rho.append(np.nan)
-        data['best_rho'] = modified_rho    
-    else:
-        data['best_rho'] = data['output/final_test_spearman']
     return data
 
-
-
-def get_rho_by_variable(df,variable_str):
-    
-        df = df[['best_rho',variable_str,'seed']].copy()
-        s1,s2,s3, s4, s5 = df[df['seed'] == 1].copy(),  df[df['seed'] == 2].copy(), df[df['seed'] == 3].copy(), df[df['seed'] == 4].copy(), df[df['seed'] == 5].copy()
-  
-        variable_arr = df[variable_str].drop_duplicates().values
-        variable_arr.sort()
-        df = df.drop_duplicates([variable_str,'seed'],keep='first')
-        df = df.sort_values([variable_str])
-        
-        
-        for var in variable_arr:
-            if var not in s1[variable_str].values:    
-                df = df.append({'best_rho': np.nan, variable_str: var, 'seed': 1}, ignore_index=True)
-            if var not in s2[variable_str].values:
-                df = df.append({'best_rho': np.nan, variable_str: var, 'seed': 2}, ignore_index=True)
-            if var not in s3[variable_str].values:
-                df = df.append({'best_rho': np.nan, variable_str: var, 'seed': 3}, ignore_index=True)
-            if var not in s4[variable_str].values:
-                df = df.append({'best_rho': np.nan, variable_str: var, 'seed': 4}, ignore_index=True)
-            if var not in s5[variable_str].values:
-                df = df.append({'best_rho': np.nan, variable_str: var, 'seed': 5}, ignore_index=True)
-
-        df = df.sort_values(by=[variable_str])
-        test_rho = [list (x) for x in (zip(df[df['seed'] == 1]['best_rho'],
-                                          df[df['seed'] == 2]['best_rho'], 
-                                          df[df['seed'] == 3]['best_rho'],
-                                          df[df['seed'] == 4]['best_rho'],
-                                          df[df['seed'] == 5]['best_rho']
-                                          ))]
-        return test_rho
-
-
-
-data_type = 'aav'
-
 path = f'../results/'
-cnn = 'aav_seven_vs_rest_cnn.csv'
-transformer = 'aav_seven_vs_rest_transformer.csv'
-
-
-
+cnn = 'aav_seven_vs_rest_cnn2.csv'
+transformer = 'aav_seven_vs_rest_t2.csv'
 
 model_list = [cnn, transformer]
-model_str_list = ['cnn', 'transformer']
-#model_list = [transformer]
-#model_str_list = ['transformer']
+model_str_list = ['cnn2', 't2']
 
-
+full_data = pd.DataFrame()
 for model, model_str in zip(model_list, model_str_list):
-    data = pd.DataFrame()
-    data = pd.read_csv(path + model)
-    data = add_rho_to_df(data, is_float = True)
+    tmp_data = pd.read_csv(path + model)    
+    full_data = full_data.append(tmp_data)
+full_data = full_data.rename(columns = {'basemodel': 'model'})
+full_data.loc[full_data['ngram'] == 'trigram_only', 'ngram'] = 'trigram'
+full_data = full_data.sort_values(by=['ngram','model','aug_factor'],ascending=False)
+
+aug_type_list = list(full_data['aug_type'].unique())
+aug_factor_dict = {'1': '2', '2': '5', '3': '10', '4':'25', '5': '50'} #raname augmentation datasets to their true n_aug values
+
+
+aug_type_list = aug_type_list[1: ]
+for model in model_str_list:
     
-    #store dna aug fraction none in separate df & drop from original dna df
-    dna_data_none= data[data['aug_factor'] == 'none']
-    #rename dna aug fraction 1 to DNA 
-    dna_data_rename = dna_data_none.copy()
-    dna_data_rename['aug_factor'] = 'DNA Baseline'
-    data = data.append(dna_data_rename, ignore_index = True)
+    data = full_data.copy()
+    data = data[data['model'] == model]
+    data = data[data['seq_type'] != 'aa']
+    data['aug_factor'] = data['aug_factor'].replace(aug_factor_dict)
+
+    data['style_col'] = 'NT Augmented'
+    #Parse Metric from DataFrame
+    data = add_metric_to_df(data, is_float = True, metric_str = 'spearman')
+    data.astype({'best_spearman': float})
     
-    data = data.append(dna_data_rename, ignore_index = True)
-    data = pd.merge(data,dna_data_none, how='outer', indicator=True)
+    none_seq = data[(data['aug_factor'] == 'none') & (data['seq_type'] == 'dna')]
+    data = pd.merge(data,none_seq, how='outer', indicator=True)
     data = data[data._merge.ne('both')].drop('_merge',1)
     
-    #store dna aug fraction 1 in separate df & drop from original dna df
-    aa_data = data[data['seq_type'] == 'aa']
-    aa_data_rename = aa_data.copy()
-    #rename dna aug fraction 1 to DNA 
-    aa_data_rename['aug_factor'] = 'AA Baseline'
+    none_seq['aug_factor'] = none_seq['aug_factor'].replace({'none': 'DNA Baseline'})
     
-    data = data.append(aa_data_rename, ignore_index = True)
-    data = pd.merge(data,aa_data, how='outer', indicator=True)
-    data = data[data._merge.ne('both')].drop('_merge',1)
+    indexer = none_seq[none_seq.aug_type  == 'online'].index
+    none_seq.loc[indexer, 'aug_factor'] = 'Online'
+    none_seq.loc[indexer, 'style_col'] = 'NT Augmented'
     
-    aa_baseline = data[(data['ngram'] == 'unigram') & (data['seq_type'] == 'aa')]
-       
-    #for ngram in ['unigram']: 
-    for ngram in ['unigram', 'trigram_only', 'tri_unigram']: 
-        
-        nta_df = pd.DataFrame()
-        data2 = data.copy()
-        nta_df = data2[(data2['ngram'] == ngram) & (data2['seq_type'] == 'dna')]
-        
-        
-        #create mask & drop all baeline entries
-        dna_baseline = nta_df[(nta_df['aug_factor'] == 'DNA Baseline')]
-        rgx = r'Baseline'
-        mask = nta_df['aug_factor'].str.contains(rgx, na=False, flags=re.IGNORECASE, regex=True, case=False)            
-        nta_df = nta_df[~mask]
-        
-
-        def entries_with_max_mean_to_df(input_df):
-            df = input_df.copy()
-            pre_df = df.groupby(['truncate_factor', 'aug_factor']).agg([np.mean])
-            pre_df = pre_df.pivot_table(index=['aug_factor'], columns='truncate_factor', values='best_rho')
-
-            max_dict  = {}
-            truncate_factors = df['truncate_factor'].unique()
-            for trunc_factor in truncate_factors:
-                max_dict[trunc_factor] = pre_df['mean'][trunc_factor].idxmax()
-            
-            out_df = pd.DataFrame()
-            for trunc_factor in truncate_factors:
-                out_df = out_df.append(df[(df['truncate_factor'] == trunc_factor) 
-                                      & (df['aug_factor'] == str(max_dict[trunc_factor]) ) ])            
-            return out_df
-        
-        
-        df = nta_df.copy()
-        pre_df = df.groupby(['truncate_factor', 'aug_factor']).agg([np.mean])
-        pre_df = pre_df.pivot_table(index=['aug_factor'], columns='truncate_factor', values='best_rho')
-
-        max_dict  = {}
-        truncate_factors = df['truncate_factor'].unique()
-        for trunc_factor in truncate_factors:
-            max_dict[trunc_factor] = pre_df['mean'][trunc_factor].idxmax()
-        
-        out_df = pd.DataFrame()
-        for trunc_factor in truncate_factors:
-            out_df = out_df.append(df[(df['truncate_factor'] == trunc_factor) 
-                                  & (df['aug_factor'] == str(max_dict[trunc_factor]) ) ])          
+    indexer = none_seq[none_seq.aug_type  == 'online_balance'].index
+    none_seq.loc[indexer, 'aug_factor'] = 'Online Codon Balance'
+    none_seq.loc[indexer, 'aug_type'] = 'Online'
+    none_seq.loc[indexer, 'style_col'] = 'NT Augmented'
     
-        
-        
-        
-        
-        nta_df = entries_with_max_mean_to_df(nta_df)
-        aa_base_df = entries_with_max_mean_to_df(aa_baseline)
-        dna_base_df = entries_with_max_mean_to_df(dna_baseline)
-        
-        nta_df['data_type'] = 'NT Augmented'
-        aa_base_df['data_type'] = 'AA Baseline'
-        dna_base_df['data_type'] = 'DNA Baseline'
-        
-        
-        plot_df = nta_df.append(aa_base_df,ignore_index=True)
-        plot_df = plot_df.append(dna_base_df,ignore_index=True)
-        
+    indexer = none_seq[none_seq.aug_type  == 'online_none'].index
+    none_seq.loc[indexer, 'aug_factor'] = 'Online No Aug. Baseline'
+    none_seq.loc[indexer, 'aug_type'] = 'Online'
+    none_seq.loc[indexer, 'style_col'] = 'NT Augmented'
+    
+    indexer = none_seq[none_seq.aug_type  == 'online_shuffle'].index
+    none_seq.loc[indexer, 'aug_factor'] = 'Online Codon Shuffle'
+    none_seq.loc[indexer, 'aug_type'] = 'Online'
+    none_seq.loc[indexer, 'style_col'] = 'NT Augmented'
+    
+    indexer = none_seq[none_seq.aug_factor == 'none'].index
+    none_seq.loc[indexer, 'aug_factor'] = 'DNA Baseline'
+    none_seq.loc[indexer, 'style_col'] = 'DNA Baseline'
+    
+    
+    none_seq['style_col'] = 'DNA Baseline'
+    data = data.append(none_seq)
 
-        sns.set(rc={'figure.figsize':(7,5)})
-        plt.figure()
+    aug_type_list_out = ['iterative', 'codon_balance', 'codon_shuffle', 'Online', 'random']
+    
+    for aug_type in aug_type_list_out:
         
-        cb = sns.color_palette('colorblind')
-        aug_color = '#6CA2E6'
-        dna_b = cb[2]
-        aa_b = '#E6A63C'
-                
-        palette_dict = {'AA Baseline': aa_b, 'DNA Baseline': dna_b, 'NT Augmented': aug_color}
-        marker_dict = {'AA Baseline': 'o', 'DNA Baseline': 'D', 'NT Augmented': 'X'}
-        results = sns.lineplot(data=plot_df, x='truncate_factor', y="best_rho", hue='data_type', 
-                               palette=palette_dict, style = 'data_type', markers = marker_dict)
-            
-        results.set(xscale='log')
-        results.set_ylabel('Test Rho')
-        results.set_xlabel('% Total Data')
-        results.set(ylim=(0.25, 0.8))
-        sns.despine(ax = results)
-        legend = plt.legend(title='Data Type', loc='lower right', prop={'size': 11})
-
-        fig_name_str = f'{data_type}_{model_str}_{ngram}'
-        plt.suptitle(fig_name_str, fontsize='large', x = 0.4)
-        plt.savefig(f'{fig_name_str}.png', dpi=300)
+        if aug_type.startswith('Online'): on_off = 'on'
+        else: on_off = 'off'
+        aa_data = full_data[(full_data['seq_type'] == 'aa') & (full_data['on_off'] == on_off)].copy()
+        
+        aa_data['aug_factor'] = 'AA Baseline'
+        aa_data = add_metric_to_df(aa_data, is_float = True, metric_str = 'spearman')
+        aa_data_rename = aa_data.copy()
+        
+        aa_data_rename['aug_type'] = aug_type
+        aa_data_rename['style_col'] = 'AA Baseline'
+        
+        aa_trigram = aa_data_rename.copy()
+        aa_trigram['ngram'] = 'trigram'
+        aa_tri_unigram = aa_data_rename.copy()
+        aa_tri_unigram['ngram'] = 'tri_unigram'
+        
+        data = data.append(aa_trigram, ignore_index = True)
+        data = data.append(aa_tri_unigram, ignore_index = True)
+        data = data.append(aa_data_rename, ignore_index = True)
+    
+    data['aug_type'] = data['aug_type'].replace({'codon_shuffle': 'Codon Shuffle', 'iterative': 'Iterative',
+                                                 'random': 'Random', 'codon_balance': 'Codon Balance', 'online': 'Online'})
+    
+    data['ngram'] = data['ngram'].replace({'tri_unigram': 'tri+unigram'})
+    
+    sns.set_theme(style="darkgrid")
+    sns.set(rc={'figure.figsize':(7,5)})
+    plt.figure()
+    
+    cb = sns.color_palette('tab10')
+    aug_color = '#6CA2E6'
+    dna_b = cb[2]
+    aa_b = '#E6A63C'
+    
+    palette_dict = {'AA Baseline': aa_b, 'DNA Baseline': dna_b, 
+                    '2': cb[0], '5': cb[1], '10': cb[3], '25': cb[4], '50': cb[5],
+                    'online_partial': cb[9], 'Online Codon Balance': cb[7], 'Online': cb[4], 
+                    'Online No Aug. Baseline': dna_b, 'Online Codon Shuffle': cb[0]}
+    
+    
+    data = data[(data['aug_factor'] != '50')]
+    
+    
+    results = sns.relplot(data= data, kind = 'line', x="truncate_factor", y="best_spearman",hue='aug_factor', 
+                          col = "ngram", row = "aug_type", marker = "o", palette=palette_dict, legend = 'full', 
+                          style = 'style_col', row_order = ['Online', 'Iterative', 'Random', 'Codon Balance', 'Codon Shuffle'])
+    
+    (results.set_axis_labels("Fraction Total Data", "Test Rho")
+      .set_titles("{row_name}: {col_name}")
+      .tight_layout(w_pad=0))
+    
+    results.legend.remove()
+    results.fig.legend(handles=results.legend.legendHandles[1:10], loc=7, frameon= False, title = "Augmentation Factor ($n_{aug}$)")
+    
+    results.set(xscale = 'log')
+    plt.subplots_adjust(wspace=0.1)
+    data_type = 'aav'
+    fig_name_str = f'{data_type}_{model}'
+    plt.suptitle(fig_name_str, fontsize='large', x = 0.5, y = 1.025)
+    plt.savefig(f'{fig_name_str}.pdf')
