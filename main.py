@@ -377,7 +377,7 @@ def main(args):
                                 non_tensor_keys = ['patience_counter', 'final_epoch', 'output/test_set_number']
                                 for key, value in metric_dict.items():
                                     #if key == 'output/best_val_mcc' or key == 'output/best_val_loss' or key == 'output/final_test_mcc' or key == 'output/final_test_loss':
-                                    if keynot in non_tensor_keys:
+                                    if key not in non_tensor_keys:
                                         m = re.search(r'\((.*)\)', str(value))                                
                                         try:
                                             metric_dict[key] = m.group(1)
