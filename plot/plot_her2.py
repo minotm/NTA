@@ -5,12 +5,12 @@ Created 2022
 
 @author: mminot
 """
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
 import seaborn as sns
+from matplotlib.lines import Line2D
 
 def add_metric_to_df(df, is_float, metric_str):
     data = df.copy()
@@ -33,6 +33,7 @@ def add_metric_to_df(df, is_float, metric_str):
     for entry in data['best_' + metric_str]:
         entry = float(entry)
     return data
+ 
 
 path =  '../results/'
 cnn = 'her2_seven_vs_rest_cnn.csv'
@@ -85,6 +86,7 @@ for model in model_str_list:
         aa_data['aug_factor'] = 'AA Baseline'
         aa_data = add_metric_to_df(aa_data, is_float = False, metric_str = 'mcc')
         aa_data_rename = aa_data.copy()
+        
         aa_data_rename['aug_type'] = aug_type
         aa_data_rename['style_col'] = 'AA Baseline'
     
@@ -118,21 +120,38 @@ for model in model_str_list:
                     'online_partial': cb[9], 'Online Codon Balance': cb[7], 'Online': cb[4], 
                     'Online No Aug. Baseline': dna_b, 'Online Codon Shuffle': cb[0]}
     
-    marker_dict = {'cnn': 'o', 'transformer': 'o'}
-    dashes_dict = {'cnn': '-', 'transformer': '-'}
+    style_dict = {'AA Baseline': (5,1), 
+                  'DNA Baseline': (5,1),                     
+                    'NT Augmented': '', 
+                    'NT Augmented Online': (3,1,1,1,1,1),
+                    'AA Online Baseline': (1,1),
+                    'DNA Online Baseline': (1,1)
+                    }
+
     results = sns.relplot(data= data, kind = 'line', x="truncate_factor", y="best_mcc",hue='aug_factor', 
-                          col = "ngram", row = "aug_type", marker = "o", palette=palette_dict, legend = 'full', 
-                          style = 'style_col', row_order = ['Iterative', 'Random', 'Codon Balance', 'Codon Shuffle'])
+                          col = "ngram", row = "aug_type", palette=palette_dict, legend = 'full', 
+                          style = 'style_col', marker = "o", dashes = style_dict,
+                          row_order = ['Iterative', 'Random', 'Codon Balance', 'Codon Shuffle'])
     
     (results.set_axis_labels("Fraction Total Data", "Test MCC")
       .set_titles("{row_name}: {col_name}")
       .tight_layout(w_pad=0))
     
     results.legend.remove()
-    results.fig.legend(handles=results.legend.legendHandles[1:6], loc=7, frameon= False, title = 'Augmentation Factor \n($n_{aug}$)')
+    results.legend.legendHandles = results.legend.legendHandles[1:4]
+    legend_dna_baseline = Line2D([0,1],[0,1],linestyle='--', color=dna_b, label = 'DNA Baseline')
+    legend_aa_baseline = Line2D([0,1],[0,1],linestyle='--', color=aa_b, label = 'AA Baseline')
     
-    plt.subplots_adjust(wspace=0.1)
+    for legend_element in [legend_dna_baseline, legend_aa_baseline]:
+        
+        results.legend.legendHandles.append(legend_element)
+    
+    results.fig.legend(handles=results.legend.legendHandles, loc=7, frameon= False, title = 'Augmentation Factor \n($n_{aug}$)')
+    
     data_type = 'her2'
+    plt.subplots_adjust(wspace=0.1)
+    
     fig_name_str = f'{data_type}_{model}'
     plt.suptitle(fig_name_str, fontsize='large', x = 0.5, y = 1.025)
     plt.savefig(f'{fig_name_str}.pdf')
+    plt.savefig(f'{fig_name_str}.png', dpi=300)
