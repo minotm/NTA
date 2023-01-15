@@ -6,7 +6,7 @@
 
 
 
-This repository contains the scripts to perform **N**ucleo**t**ide **A**ugmentation (**NTA**) on a labeled data set of amino acid sequences as well as to recreate the analysis described in Minot & Reddy 2022 [[1](https://www.biorxiv.org/content/10.1101/2022.03.08.483422v1)].
+This repository contains the scripts to perform **N**ucleo**t**ide **A**ugmentation (**NTA**) on a labeled data set of amino acid sequences as well as to recreate the analysis described in Minot & Reddy 2022 [[1](https://doi.org/10.1093/bioadv/vbac094)].
 
 
 ## Table of contents
@@ -86,12 +86,16 @@ python plot_trastuzumab.py
 If you use the code in this repository for your research, please cite our paper.
 
 ```
-@article {Minot2022.03.08.483422,
-	author = {Minot, Mason and Reddy, Sai T.},
-	title = {Nucleotide augmentation for machine learning-guided protein engineering},
-	year = {2022},
-	doi = {10.1101/2022.03.08.483422},
-	URL = {https://www.biorxiv.org/content/early/2022/03/09/2022.03.08.483422},
-	journal = {bioRxiv}
+@article{10.1093/bioadv/vbac094,
+    author = {Minot, Mason and Reddy, Sai T},
+    title = "{Nucelotide augmentation for machine learning-guided protein engineering}",
+    journal = {Bioinformatics Advances},
+    year = {2022},
+    month = {12},
+    issn = {2635-0041},
+    doi = {10.1093/bioadv/vbac094},
+    url = {https://doi.org/10.1093/bioadv/vbac094},
+    note = {vbac094},
+    eprint = {https://academic.oup.com/bioinformaticsadvances/advance-article-pdf/doi/10.1093/bioadv/vbac094/47762525/vbac094.pdf},
 }
 ```
